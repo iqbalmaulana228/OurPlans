@@ -40,8 +40,8 @@
 
   const baseRender = render;
   render = function () {
-    baseRender();
     normalize();
+    baseRender();
     renderExtended();
   };
 
