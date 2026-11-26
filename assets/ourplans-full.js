@@ -44,12 +44,13 @@
 
   function setTheme(theme) {
     if (!themes.includes(theme)) theme = "sage";
+    const changed = state.theme !== theme;
     state.theme = theme;
     document.body.classList.remove("theme-ocean", "theme-rose", "theme-lavender");
     if (theme !== "sage") document.body.classList.add("theme-" + theme);
     if (byId("themeSelect")) byId("themeSelect").value = theme;
     try { localStorage.setItem("ourplans", JSON.stringify(state)); } catch {}
-    if (typeof cloudUser !== "undefined" && cloudUser && typeof cloudSync === "function") cloudSync();
+    if (changed && typeof cloudUser !== "undefined" && cloudUser && typeof cloudSync === "function") cloudSync();
   }
   window.setTheme = setTheme;
 
