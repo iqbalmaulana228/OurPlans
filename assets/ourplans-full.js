@@ -175,7 +175,9 @@
     const yes = state.guests.filter(g => ["Yes","Hadir","Accepted","accepted"].includes(g.rsvp)).length;
     const no = state.guests.filter(g => ["No","Tidak hadir","Declined","declined"].includes(g.rsvp)).length;
     const pending = Math.max(0, state.guests.length - yes - no);
-    if (byId("rsvpSummary")) byId("rsvpSummary").innerHTML = '<span>✓ ' + yes + ' confirmed</span><span>◷ ' + pending + ' pending</span><span>× ' + no + ' declined</span><span>' + state.guests.length + ' invited</span>';
+    const dietaryCount = state.guests.filter(g => g.diet && String(g.diet).trim() && String(g.diet).toLowerCase() !== "none").length;
+    const assignedCount = state.guests.filter(g => g.table && String(g.table).trim()).length;
+    if (byId("rsvpSummary")) byId("rsvpSummary").innerHTML = '<span>✓ ' + yes + ' confirmed</span><span>◷ ' + pending + ' pending</span><span>× ' + no + ' declined</span><span>' + state.guests.length + ' invited</span><span>♧ ' + assignedCount + ' seated</span><span>Dietary notes: ' + dietaryCount + '</span>';
 
     const total = state.expenses.reduce((n, e) => n + Number(e.amount || 0), 0);
     const paid = state.expenses.reduce((n, e) => n + Number(e.paid || 0), 0);
