@@ -274,10 +274,17 @@
 
   window.refreshGuestPortal = async function () {
     try {
-      const r = await fetch("/api/guest?id=" + encodeURIComponent(state.publicId));
-      const j = await r.json(); if (!r.ok) throw new Error(j.error || "Unable to load guest portal");
-      const publicGuests = j.payload?.guests || [];
-      publicGuests.forEach(pg => {
+      if (typeof cloudClient === "undefined" || !cloudClient) throw new Error("Configure Supabase login first.");
+      const sessionResult = await cloudClient.auth.getSession();
+      const session = sessionResult?.data?.session;
+      if (!session?.access_token) throw new Error("Login via OurPlans Cloud before syncing portal updates.");
+      const r = await fetch("/api/guest", {
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + session.access_token },
+        body: JSON.stringify({ action: "sync", weddingId: state.publicId })
+      });
+      const j = await r.json(); if (!r.ok) throw new Error(j.error || "Unable to sync guest portal");
+      const ownerGuests = j.payload?.guests || [];
+      ownerGuests.forEach(pg => {
         const guest = state.guests.find(g => g.inviteToken && g.inviteToken === pg.inviteToken);
         if (guest) { guest.rsvp = pg.rsvp || guest.rsvp; guest.message = pg.message || guest.message; }
       });
