@@ -250,7 +250,7 @@
       couple:state.couple, bride:state.bride, groom:state.groom, date:state.date, venue:state.venue, address:state.address,
       ceremony:state.ceremony, reception:state.reception, timeline:state.timeline, menu:state.menu,
       guests:state.guests.map(g => ({name:g.name,table:g.table,inviteToken:g.inviteToken,rsvp:g.rsvp,message:g.message || ""})),
-      gallery:state.gallery.filter(g => /^https:\\/\\//i.test(g.url || "")).map(g => ({id:g.id,url:g.url,caption:g.caption}))
+      gallery:state.gallery.filter(g => /^https:\/\/\//i.test(g.url || "")).map(g => ({id:g.id,url:g.url,caption:g.caption}))
     };
     const status = byId("portalStatus"); if (status) status.textContent = "Publishing guest portal…";
     try {
