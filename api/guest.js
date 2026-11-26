@@ -71,6 +71,15 @@ module.exports = async function handler(req, res) {
       const existing = await getRecord(c, id);
       if (existing && existing.owner_id !== ownerId) return send(res, 403, { error: "Wedding ID sudah dimiliki akun lain." });
       const payload = publicPayload(body.payload);
+      if (existing) {
+        const previousGuests = new Map((existing.payload.guests || []).map(g => [g.inviteToken, g]));
+        payload.guests = payload.guests.map(guest => {
+          const previous = previousGuests.get(guest.inviteToken);
+          return previous ? { ...guest, rsvp: previous.rsvp || guest.rsvp, message: previous.message || guest.message } : guest;
+        });
+        const galleryItems = [...(existing.payload.gallery || []), ...payload.gallery];
+        payload.gallery = Array.from(new Map(galleryItems.filter(g => /^https:\/\/[^\s]+$/i.test(cleanText(g.url, 1000))).map(g => [g.id || g.url, g])).values()).slice(-80);
+      }
       await saveRecord(c, id, ownerId, payload);
       return send(res, 200, { ok: true, url: "/guest.html?id=" + encodeURIComponent(id) });
     }
