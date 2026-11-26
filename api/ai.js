@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
   } else if (action === "palette") {
     json = true;
     const theme = clean(body.theme, 120), skin = clean(body.skinTone), hair = clean(body.hairColor), eyes = clean(body.eyeColor), preferences = clean(body.preferences, 300), avoids = clean(body.avoids, 300);
-    prompt = `Act as an expert personal color analyst and wedding stylist. Inputs: wedding theme=${theme}; skin tone=${skin}; hair=${hair}; eyes=${eyes}; preferences=${preferences}; avoid=${avoids}. Infer a tentative 12-season color family from the supplied descriptions and explain uncertainty; do not claim medical or scientific certainty. Propose exactly 5 distinct bridesmaid dress colors compatible with the theme and complexion. Unless explicitly requested, exclude bridal white/ivory/cream, pure black and vivid signal red. Return only JSON: {"season":"...","analysis":"...","palette":[{"name":"...","hex":"#RRGGBB","reason":"..."}]}. Valid hex codes only.`;
+    prompt = `Act as an expert personal color analyst and wedding stylist. Inputs: wedding theme=${theme}; skin tone=${skin}; hair=${hair}; eyes=${eyes}; preferences=${preferences}; avoid=${avoids}. Infer a tentative 12-season color family from the supplied descriptions and explain uncertainty; do not claim medical or scientific certainty. Propose exactly 5 distinct bridesmaid dress recommendations, each with a tasteful dress silhouette/style suggestion and a color compatible with the theme and complexion. Unless explicitly requested, exclude bridal white/ivory/cream, pure black and vivid signal red. Return only JSON: {"season":"...","analysis":"...","palette":[{"name":"...","hex":"#RRGGBB","reason":"...","dressStyle":"..."}]}. Valid hex codes only.`;
   } else return send(res, 400, { error: "Unknown action" });
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent?key=${encodeURIComponent(key)}`, {
@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
     if (json) {
       const parsed = JSON.parse(text.replace(/^```(?:json)?/i, "").replace(/```$/,"").trim());
       if (!Array.isArray(parsed.palette) || parsed.palette.length !== 5) return send(res, 502, { error: "Format hasil palet tidak valid." });
-      parsed.palette = parsed.palette.map(p => ({ name: clean(p.name, 80), hex: /^#[0-9a-f]{6}$/i.test(p.hex) ? p.hex : "#879985", reason: clean(p.reason, 240) }));
+      parsed.palette = parsed.palette.map(p => ({ name: clean(p.name, 80), hex: /^#[0-9a-f]{6}$/i.test(p.hex) ? p.hex : "#879985", reason: clean(p.reason, 240), dressStyle: clean(p.dressStyle, 240) }));
       return send(res, 200, parsed);
     }
     return send(res, 200, { text });
