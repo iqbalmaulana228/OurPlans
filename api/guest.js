@@ -52,7 +52,14 @@ module.exports = async function handler(req, res) {
       const id = cleanText(req.query.id, 80);
       if (!/^[a-zA-Z0-9_-]{8,80}$/.test(id)) return send(res, 400, { error: "Wedding ID tidak valid." });
       const row = await getRecord(c, id);
-      return row ? send(res, 200, { payload: row.payload }) : send(res, 404, { error: "Portal belum dipublish oleh pemilik wedding." });
+      if (!row) return send(res, 404, { error: "Portal belum dipublish oleh pemilik wedding." });
+      // Never expose personal invitation tokens in the public wedding directory.
+      const payload = publicPayload(row.payload);
+      const token = cleanText(req.query.token, 100);
+      const current = token ? (row.payload.guests || []).find(g => g.inviteToken === token) : null;
+      payload.guests = (payload.guests || []).map(({ inviteToken, ...guest }) => guest);
+      payload.currentGuest = current ? { name: cleanText(current.name, 100), rsvp: cleanText(current.rsvp, 30), message: cleanText(current.message, 500) } : null;
+      return send(res, 200, { payload });
     }
     if (req.method !== "POST") return send(res, 405, { error: "Method not allowed" });
     const body = req.body || {}, id = cleanText(body.weddingId, 80);
@@ -62,6 +69,13 @@ module.exports = async function handler(req, res) {
       const payload = publicPayload(body.payload);
       await saveRecord(c, id, ownerId, payload);
       return send(res, 200, { ok: true, url: "/guest.html?id=" + encodeURIComponent(id) });
+    }
+    if (body.action === "sync") {
+      const ownerId = await verifyUser(c, req);
+      const row = await getRecord(c, id);
+      if (!row) return send(res, 404, { error: "Portal wedding belum tersedia." });
+      if (row.owner_id !== ownerId) return send(res, 403, { error: "Akses workspace ditolak." });
+      return send(res, 200, { payload: row.payload });
     }
     const row = await getRecord(c, id);
     if (!row) return send(res, 404, { error: "Portal wedding belum tersedia." });
