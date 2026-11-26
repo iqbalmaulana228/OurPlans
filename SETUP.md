@@ -23,7 +23,7 @@ Add these variables to the OurPlans Vercel project (Production, Preview and Deve
 | `SUPABASE_ANON_KEY` | Supabase publishable/anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role secret, server-side only |
 | `GEMINI_API_KEY` | Google AI Studio API key |
-| `GEMINI_MODEL` | Optional; defaults to `gemini-2.5-flash` |
+| `GEMINI_MODEL` | Optional; defaults to `gemini-3.5-flash-lite` |
 
 Do not expose `SUPABASE_SERVICE_ROLE_KEY` or `GEMINI_API_KEY` as `NEXT_PUBLIC_*` variables. The Vercel functions in `api/` read them only on the server.
 
