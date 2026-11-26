@@ -47,6 +47,8 @@ function publicPayload(payload = {}) {
 }
 module.exports = async function handler(req, res) {
   try {
+    const missing = ["SUPABASE_URL","SUPABASE_SERVICE_ROLE_KEY","SUPABASE_ANON_KEY"].filter(key => !process.env[key]);
+    if (missing.length) return send(res, 503, { error: "Guest portal backend belum dikonfigurasi di Vercel: " + missing.join(", ") });
     const c = config();
     if (req.method === "GET") {
       const id = cleanText(req.query.id, 80);
