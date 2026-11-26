@@ -1,11 +1,7 @@
 /* OurPlans full feature layer. Kept separate from the original SPA to make upgrades safer. */
 (function () {
   const themes = ["sage", "ocean", "rose", "lavender"];
-  const defaultMenu = {
-    starters: [{name:"Welcome bites",description:"A selection of light starters"}],
-    mains: [{name:"Chef's special",description:"Main course details to be confirmed"}],
-    desserts: [{name:"Wedding cake",description:"A sweet ending to the celebration"}]
-  };
+  const defaultMenu = { starters: [], mains: [], desserts: [] };
   const makeId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : "op-" + Date.now() + "-" + Math.random().toString(36).slice(2));
   const text = (v, max = 240) => String(v == null ? "" : v).slice(0, max);
   const safe = (v) => typeof esc === "function" ? esc(v) : text(v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -53,6 +49,7 @@
     if (theme !== "sage") document.body.classList.add("theme-" + theme);
     if (byId("themeSelect")) byId("themeSelect").value = theme;
     try { localStorage.setItem("ourplans", JSON.stringify(state)); } catch {}
+    if (typeof cloudUser !== "undefined" && cloudUser && typeof cloudSync === "function") cloudSync();
   }
   window.setTheme = setTheme;
 
@@ -148,9 +145,10 @@
     const table = byId("tableInput").value.trim(), name = byId("seatGuest").value.trim();
     if (!table || !name) return;
     const guest = state.guests.find(g => g.name.toLowerCase() === name.toLowerCase());
-    if (guest) guest.table = table;
+    if (!guest) return toast("Add this person to the guest list first.");
+    guest.table = table;
     state.seating = state.seating.filter(s => s.name.toLowerCase() !== name.toLowerCase());
-    state.seating.push({ id: Date.now(), table, name });
+    state.seating.push({ id: Date.now(), table, name: guest.name });
     byId("seatGuest").value = "";
     save();
   };
@@ -158,6 +156,15 @@
     const guest = state.guests.find(g => String(g.id) === String(id));
     if (!guest) return;
     guest.rsvp = value; save();
+  };
+  const baseDelete = del;
+  del = function (collection, id) {
+    if (collection === "expenses") state.payments = state.payments.filter(p => String(p.expenseId) !== String(id));
+    if (collection === "guests") {
+      const removed = state.guests.find(g => String(g.id) === String(id));
+      if (removed) state.seating = state.seating.filter(s => s.name !== removed.name);
+    }
+    baseDelete(collection, id);
   };
   window.removeTask = function (id) { state.tasks = state.tasks.filter(t => String(t.id) !== String(id)); save(); };
   window.delTimeline = function (id) { del("timeline", id); };
