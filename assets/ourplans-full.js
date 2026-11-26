@@ -280,7 +280,7 @@
   };
   function renderAI() {
     const result = state.aiSuggestions, output = byId("aiResult"); if (!result || !output) return;
-    output.innerHTML = '<div class="airesult"><h4>' + safe(result.season || "Suggested color season") + '</h4><p>' + safe(result.analysis || "") + '</p>' + (result.palette || []).map((p,i) => '<div class="colorchip"><i style="background:' + safe(p.hex) + '"></i><div style="flex:1"><b>' + safe(p.name) + '</b><div class="footnote">' + safe(p.hex) + ' · ' + safe(p.reason) + '</div></div><button class="btn light" onclick="addAiColor(' + i + ')">Add to palette</button></div>').join("") + '</div>';
+    output.innerHTML = '<div class="airesult"><h4>' + safe(result.season || "Suggested color season") + '</h4><p>' + safe(result.analysis || "") + '</p>' + (result.palette || []).map((p,i) => '<div class="colorchip"><i style="background:' + safe(p.hex) + '"></i><div style="flex:1"><b>' + safe(p.name) + '</b><div class="footnote">' + safe(p.hex) + ' · ' + safe(p.reason) + '</div><div class="footnote"><b>Dress style:</b> ' + safe(p.dressStyle || "Style recommendation not returned") + '</div></div><button class="btn light" onclick="addAiColor(' + i + ')">Add to palette</button></div>').join("") + '</div>';
   }
   window.addAiColor = function (i) {
     const p = state.aiSuggestions?.palette?.[i]; if (!p) return;
