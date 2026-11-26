@@ -1,5 +1,5 @@
 // Vercel Function: secure Gemini proxy for the OurPlans AI planner.
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 function send(res, status, body) { return res.status(status).setHeader("Cache-Control", "no-store").json(body); }
 function clean(value, max = 180) { return String(value || "").trim().slice(0, max); }
 module.exports = async function handler(req, res) {
