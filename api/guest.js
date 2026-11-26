@@ -42,7 +42,7 @@ function publicPayload(payload = {}) {
       desserts: (payload.menu?.desserts || []).slice(0, 20).map(x => ({ name: cleanText(x.name, 100), description: cleanText(x.description, 240) }))
     },
     guests: guests.slice(0, 2000).map(g => ({ name: cleanText(g.name, 100), table: cleanText(g.table, 40), inviteToken: cleanText(g.inviteToken, 100), rsvp: cleanText(g.rsvp, 30), message: cleanText(g.message, 500) })),
-    gallery: (Array.isArray(payload.gallery) ? payload.gallery : []).slice(-80).map(g => ({ id: cleanText(g.id, 100), url: cleanText(g.url, 1000), caption: cleanText(g.caption, 180) }))
+    gallery: (Array.isArray(payload.gallery) ? payload.gallery : []).slice(-80).filter(g => /^https:\/\/[^\s]+$/i.test(cleanText(g.url, 1000))).map(g => ({ id: cleanText(g.id, 100), url: cleanText(g.url, 1000), caption: cleanText(g.caption, 180) }))
   };
 }
 module.exports = async function handler(req, res) {
@@ -68,6 +68,8 @@ module.exports = async function handler(req, res) {
     if (!/^[a-zA-Z0-9_-]{8,80}$/.test(id)) return send(res, 400, { error: "Wedding ID tidak valid." });
     if (body.action === "publish") {
       const ownerId = await verifyUser(c, req);
+      const existing = await getRecord(c, id);
+      if (existing && existing.owner_id !== ownerId) return send(res, 403, { error: "Wedding ID sudah dimiliki akun lain." });
       const payload = publicPayload(body.payload);
       await saveRecord(c, id, ownerId, payload);
       return send(res, 200, { ok: true, url: "/guest.html?id=" + encodeURIComponent(id) });
