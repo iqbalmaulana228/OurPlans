@@ -260,7 +260,7 @@
       const r = await fetch("/api/guest",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer " + session.access_token},body:JSON.stringify({action:"publish",weddingId:state.publicId,payload})});
       const j = await r.json(); if (!r.ok) throw new Error(j.error || "Publish failed");
       // Promote owner-uploaded local image previews into the shared photo bucket during publish.
-      const localPhotos = state.gallery.filter(g => /^data:image\\/(?:jpeg|png|webp);base64,/i.test(g.url || ""));
+      const localPhotos = state.gallery.filter(g => /^data:image\/(?:jpeg|png|webp);base64,/i.test(g.url || ""));
       for (const photo of localPhotos) {
         const upload = await fetch("/api/guest", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"gallery",weddingId:state.publicId,image:photo.url,caption:photo.caption || "Wedding inspiration"}) });
         const uploaded = await upload.json();
