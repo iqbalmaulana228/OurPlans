@@ -13,6 +13,7 @@
   function normalize() {
     state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
     state.expenses = Array.isArray(state.expenses) ? state.expenses : [];
+    state.payments = Array.isArray(state.payments) ? state.payments : [];
     state.guests = Array.isArray(state.guests) ? state.guests : [];
     state.vendors = Array.isArray(state.vendors) ? state.vendors : [];
     state.timeline = Array.isArray(state.timeline) ? state.timeline : [];
@@ -75,6 +76,44 @@
     ["expenseName","expenseAmount","expensePaid"].forEach(id => { if (byId(id)) byId(id).value = ""; });
     save();
   };
+  window.addPayment = function () {
+    const expenseId = byId("paymentExpense").value;
+    const expense = state.expenses.find(e => String(e.id) === String(expenseId));
+    const amount = Number(byId("paymentAmount").value || 0);
+    if (!expense || amount <= 0) return toast("Choose an expense and enter a valid amount.");
+    const remaining = Math.max(0, Number(expense.amount || 0) - Number(expense.paid || 0));
+    if (amount > remaining) return toast("Payment is higher than the remaining balance.");
+    const id = makeId();
+    state.payments.push({ id, expenseId: expense.id, amount, date: byId("paymentDate").value || new Date().toISOString().slice(0,10), note: byId("paymentNote").value.trim() });
+    expense.paid = Number(expense.paid || 0) + amount;
+    if (expense.paid >= expense.amount) expense.status = "Paid";
+    else if (expense.paid > 0) expense.status = "Deposit";
+    byId("paymentAmount").value = "";
+    byId("paymentNote").value = "";
+    save();
+    toast("Payment recorded");
+  };
+  window.removePayment = function (id) {
+    const payment = state.payments.find(p => String(p.id) === String(id));
+    if (!payment) return;
+    const expense = state.expenses.find(e => String(e.id) === String(payment.expenseId));
+    if (expense) {
+      expense.paid = Math.max(0, Number(expense.paid || 0) - Number(payment.amount || 0));
+      if (expense.paid < expense.amount && expense.status === "Paid") expense.status = expense.paid ? "Deposit" : "Estimate";
+    }
+    state.payments = state.payments.filter(p => String(p.id) !== String(id));
+    save();
+  };
+  window.exportPayments = function () {
+    const rows = [["date","expense","amount","note"], ...state.payments.map(p => [p.date, state.expenses.find(e => String(e.id) === String(p.expenseId))?.name || "Deleted expense", p.amount, p.note || ""])];
+    const csv = rows.map(row => row.map(v => '"' + String(v ?? "").replace(/"/g,'""') + '"').join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    a.download = "payment-history.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   addGuest = function () {
     const name = byId("guestName").value.trim();
     if (!name) return;
@@ -143,6 +182,18 @@
     if (byId("paidTotal")) byId("paidTotal").textContent = money(paid);
     if (byId("dueTotal")) byId("dueTotal").textContent = money(Math.max(0, total - paid));
     if (byId("expenseTable")) byId("expenseTable").innerHTML = state.expenses.map(e => '<tr><td>' + safe(e.name) + '</td><td>' + money(e.amount) + '</td><td>' + money(e.paid) + '</td><td>' + money(Math.max(0,e.amount-e.paid)) + '</td><td>' + safe(e.status) + '</td><td><button class="btn light" onclick="del(\'expenses\',' + e.id + ')">×</button></td></tr>').join("");
+    if (byId("paymentExpense")) {
+      const chosen = byId("paymentExpense").value;
+      byId("paymentExpense").innerHTML = state.expenses.map(e => '<option value="' + e.id + '">' + safe(e.name) + ' · remaining ' + money(Math.max(0,e.amount-e.paid)) + '</option>').join("");
+      if (state.expenses.some(e => String(e.id) === chosen)) byId("paymentExpense").value = chosen;
+      if (!byId("paymentDate").value) byId("paymentDate").value = new Date().toISOString().slice(0,10);
+    }
+    if (byId("paymentTable")) byId("paymentTable").innerHTML = state.payments.slice().sort((a,b) => String(b.date).localeCompare(String(a.date))).map(p => {
+      const expense = state.expenses.find(e => String(e.id) === String(p.expenseId));
+      return '<tr><td>' + safe(p.date || "") + '</td><td>' + safe(expense ? expense.name : "Deleted expense") + '</td><td>' + money(p.amount) + '</td><td>' + safe(p.note || "") + '</td><td><button class="btn light" onclick="removePayment(' + JSON.stringify(p.id) + ')">×</button></td></tr>';
+    }).join("");
+    if (byId("paymentEmpty")) byId("paymentEmpty").style.display = state.payments.length ? "none" : "block";
+
 
     if (byId("guestTable")) byId("guestTable").innerHTML = state.guests.map(g => {
       const link = guestLink(g), status = ["Yes","Hadir","Accepted","accepted"].includes(g.rsvp) ? "Yes" : (["No","Tidak hadir","Declined","declined"].includes(g.rsvp) ? "No" : "Pending");
